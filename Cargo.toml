@@ -11,4 +11,3 @@ clap = { version = "3.2.5", features = ["derive", "env"] }
 image = "0.24.2"
 crossterm = "0.23.2"
 thiserror = "1.0.31"
-eddie = "0.4.2"

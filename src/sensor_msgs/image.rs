@@ -1,4 +1,4 @@
-use std::io::Read;
+use crate::common::{cursor::Cursor, error::AppError};
 
 use super::Header;
 
@@ -7,9 +7,9 @@ use super::Header;
 /// Struct definition from:
 /// http://docs.ros.org/en/noetic/api/sensor_msgs/html/msg/Image.html
 #[derive(Debug)]
-pub struct Image {
+pub struct Image<'a> {
     /// Header timestamp should be acquisition time of image.
-    pub header: Header,
+    pub header: Header<'a>,
 
     /// Image height, that is, number of rows
     pub height: u32,
@@ -22,7 +22,7 @@ pub struct Image {
     /// The legal values for encoding are in file src/image_encodings.cpp
     /// If you want to standardize a new string format, join
     /// ros-users@lists.sourceforge.net and send an email proposing a new encoding.
-    pub encoding: String,
+    pub encoding: &'a str,
 
     /// Is this data bigendian?
     pub is_bigendian: bool,
@@ -31,44 +31,27 @@ pub struct Image {
     pub step: u32,
 
     /// Actual matrix data, size is (step * rows)
-    pub data: Vec<u8>,
+    pub data: &'a [u8],
 }
 
-impl Image {
-    pub fn from_reader<R: Read>(b: &mut R) -> Self {
-        let header = Header::from_reader(b);
+impl<'a> Image<'a> {
+    pub fn from_reader(cursor: &mut Cursor<'a>) -> Result<Self, AppError> {
+        let header = Header::from_reader(cursor)?;
 
-        let mut buf_height = [0u8; 4];
-        let mut buf_width = [0u8; 4];
-        let mut buf_encoding_len = [0u8; 4];
-        let mut buf_is_bigendian = [0u8; 1];
-        let mut buf_step = [0u8; 4];
+        let height = cursor.next_u32()?;
+        let width = cursor.next_u32()?;
+        let encoding =
+            std::str::from_utf8(cursor.next_chunk()?).map_err(|_| AppError::InvalidUtf8String)?;
 
-        b.read(&mut buf_height).unwrap();
-        b.read(&mut buf_width).unwrap();
-        b.read(&mut buf_encoding_len).unwrap();
+        let is_bigendian = cursor.next_u8()? != 0u8;
+        let step = cursor.next_u32()?;
 
-        let height = u32::from_le_bytes(buf_height);
-        let width = u32::from_le_bytes(buf_width);
-        let encodind_len = u32::from_le_bytes(buf_encoding_len) as usize;
-        let encoding = String::from_utf8(
-            b.bytes()
-                .take(encodind_len)
-                .filter_map(Result::ok)
-                .collect::<Vec<u8>>(),
-        )
-        .unwrap();
+        // I don't know where I've lost four bytes, but now it works
+        cursor.next_u32().unwrap();
 
-        b.read(&mut buf_is_bigendian).unwrap();
-        b.read(&mut buf_step).unwrap();
+        let data = cursor.next_bytes(height as u64 * step as u64)?;
 
-        let is_bigendian = buf_is_bigendian[0] != 0;
-        let step = u32::from_le_bytes(buf_step);
-
-        let mut data = vec![0u8; (height * step) as usize];
-        b.read_exact(&mut data).unwrap();
-
-        Self {
+        Ok(Self {
             header,
             height,
             width,
@@ -76,6 +59,6 @@ impl Image {
             is_bigendian,
             step,
             data,
-        }
+        })
     }
 }

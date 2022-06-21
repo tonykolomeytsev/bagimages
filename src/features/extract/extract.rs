@@ -1,10 +1,11 @@
 use std::collections::HashMap;
-use std::io::Cursor;
 
 use image::{ImageBuffer, RgbImage};
 use rosbag::{ChunkRecord, MessageRecord, RosBag};
 
+use crate::common::cursor::Cursor;
 use crate::common::error::AppError;
+use crate::common::naming::to_res_name;
 use crate::features::extract::view::View;
 use crate::sensor_msgs::{self};
 use crate::{args::Args, features::renderer::Renderer};
@@ -21,6 +22,9 @@ pub struct TopicState {
 
     /// Topic name
     pub name: String,
+
+    /// Topic files base name
+    pub res_name: String,
 }
 
 impl TopicState {
@@ -28,6 +32,7 @@ impl TopicState {
         TopicState {
             counter: 0,
             extracted: 0,
+            res_name: to_res_name(&name),
             name,
         }
     }
@@ -115,22 +120,25 @@ fn process_message(
                 }
 
                 let mut cursor = Cursor::new(data.data);
-                let msg_image = sensor_msgs::Image::from_reader(&mut cursor);
+                let msg_image = sensor_msgs::Image::from_reader(&mut cursor)?;
 
-                let mut buffer: RgbImage =
-                    ImageBuffer::from_vec(msg_image.width, msg_image.height, msg_image.data)
-                        .unwrap();
+                let mut buffer: RgbImage = ImageBuffer::from_vec(
+                    msg_image.width,
+                    msg_image.height,
+                    msg_image.data.to_vec(),
+                )
+                .unwrap();
 
                 // IDK why blue and green channels are mixed
                 for p in buffer.pixels_mut() {
                     let [r, g, b] = p.0;
-                    p.0 = [r, b, g];
+                    p.0 = [b, g, r];
                 }
 
                 let save_path = format!(
                     "{}/{}_{}.png",
                     args.output_dir,
-                    msg_image.header.frame_id,
+                    state.res_name,
                     state.extracted + 1,
                 );
                 buffer

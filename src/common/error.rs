@@ -10,4 +10,9 @@ pub enum AppError {
     RosBagInvalidMesage(String),
     #[error("Invalid topic type in rosbag file: {0}, expected {1}")]
     RosBagInvalidTopicType(String, String),
+
+    #[error("Out of bounds when reading byte stream")]
+    OutOfBounds,
+    #[error("Invalid UTF-8 string encountered wher reading byte stream")]
+    InvalidUtf8String,
 }

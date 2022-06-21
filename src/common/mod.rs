@@ -1,2 +1,3 @@
+pub mod cursor;
 pub mod error;
-// pub mod naming;
+pub mod naming;

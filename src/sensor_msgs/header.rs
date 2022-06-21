@@ -1,9 +1,9 @@
-use std::io::Read;
+use crate::common::{cursor::Cursor, error::AppError};
 
 /// Struct definition from:
 /// http://docs.ros.org/en/noetic/api/std_msgs/html/msg/Header.html
 #[derive(Debug)]
-pub struct Header {
+pub struct Header<'a> {
     /// Standard metadata for higher-level stamped data types.
     /// This is generally used to communicate timestamped data
     /// in a particular coordinate frame.
@@ -19,30 +19,20 @@ pub struct Header {
     pub stamp: u64,
 
     /// Frame this data is associated with
-    pub frame_id: String,
+    pub frame_id: &'a str,
 }
 
-impl Header {
-    pub fn from_reader<R: Read>(b: &mut R) -> Self {
-        let mut buf_seq = [0u8; 4];
-        let mut buf_stamp = [0u8; 8];
-        let mut buf_frame_id_len = [0u8; 4];
+impl<'a> Header<'a> {
+    pub fn from_reader(cursor: &mut Cursor<'a>) -> Result<Self, AppError> {
+        let seq = cursor.next_u32()?;
+        let stamp = cursor.next_time()?;
+        let frame_id =
+            std::str::from_utf8(cursor.next_chunk()?).map_err(|_| AppError::InvalidUtf8String)?;
 
-        b.read(&mut buf_seq).unwrap();
-        b.read(&mut buf_stamp).unwrap();
-        b.read(&mut buf_frame_id_len).unwrap();
-
-        let frame_id_len = u32::from_le_bytes(buf_frame_id_len) as usize;
-        let bytes = b
-            .bytes()
-            .take(frame_id_len)
-            .filter_map(Result::ok)
-            .collect::<Vec<u8>>();
-
-        Header {
-            seq: u32::from_le_bytes(buf_seq),
-            stamp: u64::from_le_bytes(buf_stamp),
-            frame_id: String::from_utf8(bytes).unwrap(),
-        }
+        Ok(Header {
+            seq,
+            stamp,
+            frame_id,
+        })
     }
 }

@@ -25,6 +25,6 @@ pub struct Args {
     #[clap(short = 'S', long, default_value_t = 1u32)]
     pub step: u32,
     /// Convert RGB8 to BGR8 (for case cv_bridge mixed up color channels)
-    #[clap(short, default_value_t = true)]
+    #[clap(short = 'i')]
     pub invert_channels: bool,
 }

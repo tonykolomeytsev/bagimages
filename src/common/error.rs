@@ -15,4 +15,8 @@ pub enum AppError {
     OutOfBounds,
     #[error("Invalid UTF-8 string encountered wher reading byte stream")]
     InvalidUtf8String,
+    #[error("Cannot decode frame with encoding {0}")]
+    InvalidImageEncoding(String),
+    #[error("Cannot save file as `{0}`. Cause: {1}")]
+    CannotSave(String, String),
 }

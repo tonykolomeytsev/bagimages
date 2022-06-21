@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use image::{ImageBuffer, RgbImage};
+use rosbag::record_types::Connection;
 use rosbag::{ChunkRecord, MessageRecord, RosBag};
 
 use crate::common::cursor::Cursor;
@@ -50,9 +51,7 @@ pub fn extract(args: Args) -> Result<(), AppError> {
 
     let mut states: HashMap<u32, TopicState> = HashMap::new();
 
-    for record in bag.chunk_records()
-    /* take */
-    {
+    for record in bag.chunk_records() {
         if let Some(max) = args.number {
             let is_all_finished = states.iter().all(|(_, v)| v.extracted >= max);
             let is_all_found = states.len() == topics.len();
@@ -65,7 +64,6 @@ pub fn extract(args: Args) -> Result<(), AppError> {
             ChunkRecord::Chunk(chunk) => {
                 for msg in chunk.messages() {
                     let msg = msg.map_err(|e| AppError::RosBagInvalidMesage(e.to_string()))?;
-
                     process_message(&args, msg, &mut states, &topics, &renderer)?;
                 }
             }
@@ -86,68 +84,81 @@ fn process_message(
     renderer: &Renderer,
 ) -> Result<(), AppError> {
     match msg {
-        MessageRecord::Connection(connection) => {
-            let conn_id = connection.id;
-            let key = connection.topic;
-            let is_desired_topic = topics.contains(&key);
-            let is_desired_type = connection.tp == TOPIC_IMAGE_TYPE;
-
-            match (is_desired_topic, is_desired_type) {
-                (true, true) => {
-                    states.insert(conn_id, TopicState::new(key.to_string()));
-                }
-                (true, false) => {
-                    return Err(AppError::RosBagInvalidTopicType(
-                        key.to_string(),
-                        TOPIC_IMAGE_TYPE.to_string(),
-                    ))
-                }
-                _ => (),
-            };
-        }
+        MessageRecord::Connection(connection) => process_connection(&connection, &topics, states)?,
         MessageRecord::MessageData(data) => {
-            let conn_id = data.conn_id;
-
-            if let Some(state) = states.get_mut(&conn_id) {
+            // Process message only if the data message was preceded by a connection message
+            // Reading a message with connection will create an entry in states.
+            if let Some(state) = states.get_mut(&data.conn_id) {
                 state.counter += 1;
+
+                // Export no more than `args.number` images
                 match (args.number, state.extracted) {
-                    (Some(max), extracted) if extracted >= max => return Ok(()),
+                    (Some(number), extracted) if extracted >= number => return Ok(()),
                     _ => (),
                 }
 
-                if state.counter % args.step != 0 {
+                // Export images not in a row, but through step
+                if (state.counter - 1) % args.step != 0 {
                     return Ok(());
                 }
 
-                let mut cursor = Cursor::new(data.data);
-                let msg_image = sensor_msgs::Image::from_reader(&mut cursor)?;
-
-                let mut buffer: RgbImage = ImageBuffer::from_vec(
-                    msg_image.width,
-                    msg_image.height,
-                    msg_image.data.to_vec(),
-                )
-                .unwrap();
-
-                // IDK why blue and green channels are mixed
-                for p in buffer.pixels_mut() {
-                    let [r, g, b] = p.0;
-                    p.0 = [b, g, r];
-                }
-
-                let save_path = format!(
-                    "{}/{}_{}.png",
-                    args.output_dir,
-                    state.res_name,
-                    state.extracted + 1,
-                );
-                buffer
-                    .save_with_format(save_path, image::ImageFormat::Png)
-                    .unwrap();
-                state.extracted += 1;
+                process_image(&args, state, &data.data)?;
             }
         }
     }
     renderer.render(&states, true);
+    Ok(())
+}
+
+fn process_connection(
+    connection: &Connection,
+    topics: &[&str],
+    states: &mut HashMap<u32, TopicState>,
+) -> Result<(), AppError> {
+    let conn_id = connection.id;
+    let key = connection.topic;
+    let is_desired_topic = topics.contains(&key);
+    let is_desired_type = connection.tp == TOPIC_IMAGE_TYPE;
+
+    match (is_desired_topic, is_desired_type) {
+        (true, true) => {
+            states.insert(conn_id, TopicState::new(key.to_string()));
+            Ok(())
+        }
+        (true, false) => Err(AppError::RosBagInvalidTopicType(
+            key.to_string(),
+            TOPIC_IMAGE_TYPE.to_string(),
+        )),
+        _ => Ok(()),
+    }
+}
+
+fn process_image(args: &Args, state: &mut TopicState, data: &[u8]) -> Result<(), AppError> {
+    let image = sensor_msgs::Image::from_reader(&mut Cursor::new(data))?;
+
+    let mut buffer: RgbImage =
+        ImageBuffer::from_vec(image.width, image.height, image.data.to_vec())
+            .ok_or(AppError::InvalidImageEncoding(image.encoding.to_string()))?;
+
+    // for cases when cv_bridge shits yourself and mix up color channels
+    if args.invert_channels {
+        for p in buffer.pixels_mut() {
+            let [r, g, b] = p.0;
+            p.0 = [b, g, r];
+        }
+    }
+
+    let save_path = format!(
+        "{}/{}_{}.png",
+        args.output_dir,
+        state.res_name,
+        state.extracted + 1,
+    );
+
+    buffer
+        .save_with_format(&save_path, image::ImageFormat::Png)
+        .map_err(|e| AppError::CannotSave(save_path, e.to_string()))?;
+
+    state.extracted += 1;
     Ok(())
 }

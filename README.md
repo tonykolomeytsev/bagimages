@@ -34,18 +34,74 @@ Install Rust: https://www.rust-lang.org/tools/install
 And then clone and build the project with `cargo`:
 
 ```bash
+git clone https://github.com/tonykolomeytsev/bagimages.git
+cd bagimages
 cargo build --release
 ```
 
-And then take the compiled program `{project_root}/target/release/bagimages`
+And then take the compiled app: `{project_root}/target/release/bagimages`
 
 ## How to use?
 
-TODO
+**NOTE:** Sometimes when exporting images via cv_bridge, there is confusion with color channels: rgb8 images turn into bgr8. To compensate for this effect, use the `-i` option. 
+
+#### Export all frames from specified topic to the current directory
+
+```bash
+bagimages some.bag . /some_topic/raw_image
+```
+
+#### Export all frames from specified topic to the specified directory
+
+```bash
+bagimages some.bag exported /some_topic/raw_image
+```
+
+#### Export one first frame
+
+```bash
+bagimages -n 1 some.bag . /some_topic/raw_image
+# or
+bagimages --number 1 some.bag . /some_topic/raw_image
+```
+
+#### Export 5 frames with 10 frames step
+
+It means frames number 1, 11, 21, 31, 41 will be exported.
+
+```bash
+bagimages -n 5 -S 10 some.bag . /some_topic/raw_image
+#               ^
+#               It's a capital S
+# or
+bagimages --number 5 --step 10 some.bag . /some_topic/raw_image
+```
+
+#### Export every fifth frame from second to tenth second
+
+```bash
+bagimages -S 5 -s 2 -e 10 some.bag . /some_topic/raw_image
+# or
+bagimages --step 5 --start 2 --end 10 some.bag . /some_topic/raw_image
+```
+
+#### Export of one frame at the tenth second
+
+```bash
+bagimages -n 1 -s 10 some.bag . /some_topic/raw_image
+# or
+bagimages --number 1 --start 10 some.bag . /some_topic/raw_image
+```
+
+#### Export with conversion from BGR8 to RGB8 (or vice versa)
+
+```bash
+bagimages -i [OTHER_OPTIONS] some.bag . /some_topic
+```
 
 ## Limitations
 
-TODO
+Currently only `RGB8` and `BGR8` images are supported.
 
 ## Project status
 

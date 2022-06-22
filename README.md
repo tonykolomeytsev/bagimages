@@ -19,13 +19,13 @@ A multi-platform tool for exporting images from rosbag files.
 
 Just run on terminal:
 
-* `curl -o- https://raw.githubusercontent.com/tonykolomeytsev/fxa/master/install.sh | bash`
+* `curl -o- https://raw.githubusercontent.com/tonykolomeytsev/bagimages/master/install.sh | bash`
 
-* Or download suitable executable from the [latest release](https://github.com/tonykolomeytsev/fxa/releases/latest).
+* Or download suitable executable from the [latest release](https://github.com/tonykolomeytsev/bagimages/releases/latest).
 
 ### Installation on Windows / MacOS
 
-Download and run suitable executable from the [latest release](https://github.com/tonykolomeytsev/fxa/releases/latest).
+Download and run suitable executable from the [latest release](https://github.com/tonykolomeytsev/bagimages/releases/latest).
 
 ### Build source code
 

@@ -1,13 +1,13 @@
 [package]
 name = "bagimages"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 rosbag = "0.6.0"
-clap = { version = "3.2.5", features = ["derive", "env"] }
+clap = { version = "3.2.5", features = ["derive"] }
 image = "0.24.2"
 crossterm = "0.23.2"
 thiserror = "1.0.31"

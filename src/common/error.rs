@@ -19,4 +19,13 @@ pub enum AppError {
     InvalidImageEncoding(String),
     #[error("Cannot save file as `{0}`. Cause: {1}")]
     CannotSave(String, String),
+
+    #[error("Time start and end shouldn't be a negative (start={0}, end={1})")]
+    ArgsNegativeTime(f64, f64),
+    #[error("The end time cannot be earlier than the start time (start={0}, end={1})")]
+    ArgsEndBeforeStart(f64, f64),
+    #[error("Negative step value (step={0})")]
+    ArgsNegativeStep(u32),
+    #[error("Negative frames number (step={0})")]
+    ArgsNegativeNumber(u32),
 }

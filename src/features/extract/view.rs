@@ -3,6 +3,7 @@ use crossterm::style::Stylize;
 use crate::features::renderer::{Indentable, Renderable};
 
 pub enum View {
+    RunningExport(Vec<String>),
     FoundTopic(String),
     ExtractedFromTopic(String, u32),
     Done,
@@ -11,6 +12,19 @@ pub enum View {
 impl Renderable for View {
     fn render(&self) -> String {
         match &self {
+            View::RunningExport(lines) => {
+                let lines = lines
+                    .iter()
+                    .map(|line| format!("{:i$} - {}", "", line, i = 12))
+                    .collect::<Vec<String>>()
+                    .join("\n");
+                format!(
+                    "{} bagimages v{} with following parameters:\n{}",
+                    "Running".indent().bold().green(),
+                    env!("CARGO_PKG_VERSION"),
+                    lines
+                )
+            }
             View::FoundTopic(name) => {
                 format!(
                     "{} topic {}",
@@ -20,7 +34,7 @@ impl Renderable for View {
             }
             View::ExtractedFromTopic(name, number) => format!(
                 "{} {} frames from topic {}",
-                "Extracted".indent().bold().green(),
+                "Exported".indent().bold().green(),
                 number,
                 name.clone().white().bold(),
             ),

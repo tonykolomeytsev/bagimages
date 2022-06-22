@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use image::{ImageBuffer, RgbImage};
 use rosbag::record_types::Connection;
@@ -41,6 +41,8 @@ impl TopicState {
 
 pub fn extract(args: Args) -> Result<(), AppError> {
     let renderer = Renderer();
+    validate_args(&args, &renderer)?;
+
     let bag = RosBag::new(&args.path_to_bag).map_err(|e| AppError::RosBagOpen(e.to_string()))?;
 
     let topics = args
@@ -49,7 +51,7 @@ pub fn extract(args: Args) -> Result<(), AppError> {
         .map(String::as_str)
         .collect::<Vec<&str>>();
 
-    let mut states: HashMap<u32, TopicState> = HashMap::new();
+    let mut states: BTreeMap<u32, TopicState> = BTreeMap::new();
 
     for record in bag.chunk_records() {
         if let Some(max) = args.number {
@@ -79,7 +81,7 @@ pub fn extract(args: Args) -> Result<(), AppError> {
 fn process_message(
     args: &Args,
     msg: MessageRecord,
-    states: &mut HashMap<u32, TopicState>,
+    states: &mut BTreeMap<u32, TopicState>,
     topics: &[&str],
     renderer: &Renderer,
 ) -> Result<(), AppError> {
@@ -113,7 +115,7 @@ fn process_message(
 fn process_connection(
     connection: &Connection,
     topics: &[&str],
-    states: &mut HashMap<u32, TopicState>,
+    states: &mut BTreeMap<u32, TopicState>,
 ) -> Result<(), AppError> {
     let conn_id = connection.id;
     let key = connection.topic;
@@ -160,5 +162,68 @@ fn process_image(args: &Args, state: &mut TopicState, data: &[u8]) -> Result<(),
         .map_err(|e| AppError::CannotSave(save_path, e.to_string()))?;
 
     state.extracted += 1;
+    Ok(())
+}
+
+fn validate_args(args: &Args, renderer: &Renderer) -> Result<(), AppError> {
+    let mut lines: Vec<String> = Vec::new();
+    lines.push(format!("input rosbag file: {}", args.path_to_bag));
+    lines.push(format!("output dir: {}", args.output_dir));
+
+    match (args.start, args.end) {
+        // time start or end specified with negative values
+        (start, Some(end)) if start < 0f64 || end < 0f64 => {
+            return Err(AppError::ArgsNegativeTime(start, end))
+        }
+
+        // time end lower than or equals time start
+        (start, Some(end)) if end <= start => return Err(AppError::ArgsEndBeforeStart(start, end)),
+
+        // default start time is 0
+        (start, Some(end)) if start == 0f64 => {
+            lines.push(format!("export from bag start until the {:.} sec", end))
+        }
+
+        // non-default start and end time
+        (start, Some(end)) => lines.push(format!(
+            "export from {:.} sec until the {:.} sec",
+            start, end,
+        )),
+
+        // default start and end time
+        (start, None) if start == 0f64 => lines.push(format!("export from start until the end")),
+
+        // non-default start time
+        (start, None) => lines.push(format!("export from {:.} sec until the end", start)),
+    }
+
+    match (args.number, args.step) {
+        // negative step
+        (_, step) if step < 1 => return Err(AppError::ArgsNegativeStep(step)),
+
+        // negative frames number
+        (Some(number), _) if number < 1 => return Err(AppError::ArgsNegativeNumber(number)),
+
+        // frames number and step are not specified
+        (None, step) if step == 1 => lines.push("export every frame".to_string()),
+
+        // frames number is not specified, step is specified
+        (None, step) => lines.push(format!("export every {}-th frame", step)),
+
+        // frames number is specified, step is not specified
+        (Some(number), _) if number == 1 => lines.push(format!("export only one frame per topic")),
+
+        // frames number and step are specified
+        (Some(number), step) => lines.push(format!(
+            "export every {}-th frame, {} frames per topic",
+            step, number,
+        )),
+    }
+
+    if args.invert_channels {
+        lines.push("invert color channels (RGB8 to BGR8 and vice-versa)".to_string());
+    }
+
+    renderer.line(View::RunningExport(lines));
     Ok(())
 }

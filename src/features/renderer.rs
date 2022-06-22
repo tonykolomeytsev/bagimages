@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::BTreeMap,
     io::{stdout, Write},
 };
 
@@ -68,7 +68,7 @@ impl Renderer {
         stdout.flush().unwrap();
     }
 
-    pub fn render(&self, states: &HashMap<u32, TopicState>, return_cursor: bool) {
+    pub fn render(&self, states: &BTreeMap<u32, TopicState>, return_cursor: bool) {
         let mut stdout = stdout();
         stdout
             .queue(terminal::Clear(ClearType::FromCursorDown))

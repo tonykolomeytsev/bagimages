@@ -60,13 +60,11 @@ jobs:
         if: matrix.build == 'macos'
         run: brew install p7zip
 
-      # About --features vendored read here:
-      # https://github.com/sfackler/rust-openssl/issues/980
       - name: Build (Linux)
         if: matrix.build == 'linux'
         run: |
           rustup target add ${{ env.LINUX_TARGET }}
-          cargo build --release --target ${{ env.LINUX_TARGET }} --features vendored
+          cargo build --release --target ${{ env.LINUX_TARGET }}
 
       - name: Build (Windows)
         if: matrix.build == 'windows'

@@ -45,7 +45,7 @@ TODO
 
 ## Limitations
 
-At the moment, the utility is guaranteed to correctly convert SVG icons to XML only if the icons do not have gradient fills and all elements (such as `<rect>`) have already been converted to `<path>`.
+TODO
 
 ## Project status
 

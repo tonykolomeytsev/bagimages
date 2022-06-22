@@ -6,6 +6,7 @@ pub enum View {
     RunningExport(Vec<String>),
     FoundTopic(String),
     ExtractedFromTopic(String, u32),
+    // Info(String),
     Done,
 }
 
@@ -22,7 +23,7 @@ impl Renderable for View {
                     "{} bagimages v{} with following parameters:\n{}",
                     "Running".indent().bold().green(),
                     env!("CARGO_PKG_VERSION"),
-                    lines
+                    lines,
                 )
             }
             View::FoundTopic(name) => {
@@ -38,6 +39,7 @@ impl Renderable for View {
                 number,
                 name.clone().white().bold(),
             ),
+            // View::Info(text) => format!("{} {}", "Info".indent().bold().yellow(), text),
             View::Done => format!("{}", "Done".indent().bold().green()),
         }
     }

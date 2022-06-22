@@ -26,6 +26,9 @@ pub struct TopicState {
 
     /// Topic files base name
     pub res_name: String,
+
+    /// Is export process done?
+    pub done: bool,
 }
 
 impl TopicState {
@@ -35,6 +38,7 @@ impl TopicState {
             extracted: 0,
             res_name: to_res_name(&name),
             name,
+            done: false,
         }
     }
 }
@@ -52,21 +56,21 @@ pub fn extract(args: Args) -> Result<(), AppError> {
         .collect::<Vec<&str>>();
 
     let mut states: BTreeMap<u32, TopicState> = BTreeMap::new();
+    let mut start_time: u64 = 0;
 
     for record in bag.chunk_records() {
-        if let Some(max) = args.number {
-            let is_all_finished = states.iter().all(|(_, v)| v.extracted >= max);
-            let is_all_found = states.len() == topics.len();
-            if is_all_finished && is_all_found {
-                break;
-            }
+        // Export process termination criteria
+        let is_all_finished = states.iter().all(|(_, v)| v.done);
+        let is_all_found = states.len() == topics.len();
+        if is_all_finished && is_all_found {
+            break;
         }
 
         match record.map_err(|e| AppError::RosBagInvalidChunk(e.to_string()))? {
             ChunkRecord::Chunk(chunk) => {
                 for msg in chunk.messages() {
                     let msg = msg.map_err(|e| AppError::RosBagInvalidMesage(e.to_string()))?;
-                    process_message(&args, msg, &mut states, &topics, &renderer)?;
+                    process_message(&args, msg, &mut states, &topics, &mut start_time, &renderer)?;
                 }
             }
             _ => (),
@@ -83,19 +87,42 @@ fn process_message(
     msg: MessageRecord,
     states: &mut BTreeMap<u32, TopicState>,
     topics: &[&str],
+    start_time: &mut u64,
     renderer: &Renderer,
 ) -> Result<(), AppError> {
     match msg {
         MessageRecord::Connection(connection) => process_connection(&connection, &topics, states)?,
         MessageRecord::MessageData(data) => {
+            // Use first message time as start time
+            if *start_time == 0u64 {
+                *start_time = data.time;
+            }
             // Process message only if the data message was preceded by a connection message
             // Reading a message with connection will create an entry in states.
             if let Some(state) = states.get_mut(&data.conn_id) {
+                let elapsed_time_sec = (data.time - *start_time) as f64 / 1_000_000_000_f64;
+
+                // Export images only after specified start time
+                if elapsed_time_sec < args.start {
+                    return Ok(());
+                }
+
+                // Export images only before specified end time
+                if let Some(end_time) = args.end {
+                    if elapsed_time_sec > end_time {
+                        state.done = true;
+                        return Ok(());
+                    }
+                }
+
                 state.counter += 1;
 
                 // Export no more than `args.number` images
                 match (args.number, state.extracted) {
-                    (Some(number), extracted) if extracted >= number => return Ok(()),
+                    (Some(number), extracted) if extracted >= number => {
+                        state.done = true;
+                        return Ok(());
+                    }
                     _ => (),
                 }
 
@@ -104,6 +131,7 @@ fn process_message(
                     return Ok(());
                 }
 
+                // renderer.line(View::Info(format!("time {}\n", elapsed_time_sec)));
                 process_image(&args, state, &data.data)?;
             }
         }
@@ -212,6 +240,11 @@ fn validate_args(args: &Args, renderer: &Renderer) -> Result<(), AppError> {
 
         // frames number is specified, step is not specified
         (Some(number), _) if number == 1 => lines.push(format!("export only one frame per topic")),
+
+        // frames number and step are specified
+        (Some(number), step) if step == 1 => {
+            lines.push(format!("export {} frames per topic", number))
+        }
 
         // frames number and step are specified
         (Some(number), step) => lines.push(format!(

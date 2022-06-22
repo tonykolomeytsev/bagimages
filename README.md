@@ -65,6 +65,14 @@ bagimages -n 1 some.bag . /some_topic/raw_image
 bagimages --number 1 some.bag . /some_topic/raw_image
 ```
 
+#### Export one first frame from different topics
+
+```bash
+bagimages -n 1 some.bag . /topic1 /topic2 /topic3
+# or
+bagimages --number 1 some.bag . /topic1 /topic2 /topic3
+```
+
 #### Export 5 frames with 10 frames step
 
 It means frames number 1, 11, 21, 31, 41 will be exported.

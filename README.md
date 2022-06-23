@@ -5,6 +5,8 @@
 
 A multi-platform tool for exporting images from rosbag files.
 
+<img src="images/gh-logo.png"/><br/>
+
 ## Features
 
 - Export from several topics at the same time.

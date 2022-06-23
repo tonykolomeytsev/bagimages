@@ -2,6 +2,8 @@ use crate::common::{cursor::Cursor, error::AppError};
 
 use super::Header;
 
+const ROS_TYPE: &'static str = "sensor_msgs/Image";
+
 /// This message contains an uncompressed image. (0, 0) is at top-left corner of image
 ///
 /// Struct definition from:
@@ -60,5 +62,9 @@ impl<'a> Image<'a> {
             step,
             data,
         })
+    }
+
+    pub fn ros_type() -> &'static str {
+        ROS_TYPE
     }
 }

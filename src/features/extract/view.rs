@@ -7,6 +7,7 @@ pub enum View {
     FoundTopic(String),
     ExtractedFromTopic(String, u32),
     // Info(String),
+    Error(String),
     Done,
 }
 
@@ -40,6 +41,9 @@ impl Renderable for View {
                 name.clone().white().bold(),
             ),
             // View::Info(text) => format!("{} {}", "Info".indent().bold().yellow(), text),
+            View::Error(description) => {
+                format!("{} {}", "Error".indent().bold().red(), description)
+            }
             View::Done => format!("{}", "Done".indent().bold().green()),
         }
     }

@@ -20,12 +20,14 @@ pub enum AppError {
     #[error("Cannot save file as `{0}`. Cause: {1}")]
     CannotSave(String, String),
 
-    #[error("Time start and end shouldn't be a negative (start={0}, end={1})")]
+    #[error("Start and end times must not be negative (you specified start={0}, end={1})")]
     ArgsNegativeTime(f64, f64),
-    #[error("The end time cannot be earlier than the start time (start={0}, end={1})")]
+    #[error("End time is less than start time (you specified start={0}, end={1})")]
     ArgsEndBeforeStart(f64, f64),
-    #[error("Negative step value (step={0})")]
+    #[error("Step value cannot be {0} (you specified --step {0} or -S{})")]
     ArgsNegativeStep(u32),
-    #[error("Negative frames number (step={0})")]
+    #[error("Number of frames to export cannot be {0} (you specified --number {0} or -n{0})")]
     ArgsNegativeNumber(u32),
+    #[error("You have not specified any topic to export. Try running `bagimages --help`")]
+    ArgsEmptyTopics,
 }

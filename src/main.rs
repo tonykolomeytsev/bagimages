@@ -10,5 +10,5 @@ mod sensor_msgs;
 
 fn main() {
     let args = Args::parse();
-    feature_extract::extract(args).unwrap();
+    feature_extract::extract(args);
 }

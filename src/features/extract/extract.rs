@@ -11,8 +11,6 @@ use crate::features::extract::view::View;
 use crate::sensor_msgs::{self};
 use crate::{args::Args, features::renderer::Renderer};
 
-const TOPIC_IMAGE_TYPE: &'static str = "sensor_msgs/Image";
-
 #[derive(Debug, Clone)]
 pub struct TopicState {
     /// Number of all encountered frames
@@ -43,8 +41,16 @@ impl TopicState {
     }
 }
 
-pub fn extract(args: Args) -> Result<(), AppError> {
+pub fn extract(args: Args) {
     let renderer = Renderer();
+    renderer.new_line();
+
+    if let Err(e) = extract_internal(args, &renderer) {
+        renderer.line(View::Error(e.to_string()))
+    }
+}
+
+pub fn extract_internal(args: Args, renderer: &Renderer) -> Result<(), AppError> {
     validate_args(&args, &renderer)?;
 
     let bag = RosBag::new(&args.path_to_bag).map_err(|e| AppError::RosBagOpen(e.to_string()))?;
@@ -148,7 +154,7 @@ fn process_connection(
     let conn_id = connection.id;
     let key = connection.topic;
     let is_desired_topic = topics.contains(&key);
-    let is_desired_type = connection.tp == TOPIC_IMAGE_TYPE;
+    let is_desired_type = connection.tp == sensor_msgs::Image::ros_type();
 
     match (is_desired_topic, is_desired_type) {
         (true, true) => {
@@ -157,7 +163,7 @@ fn process_connection(
         }
         (true, false) => Err(AppError::RosBagInvalidTopicType(
             key.to_string(),
-            TOPIC_IMAGE_TYPE.to_string(),
+            sensor_msgs::Image::ros_type().to_string(),
         )),
         _ => Ok(()),
     }
@@ -197,6 +203,10 @@ fn validate_args(args: &Args, renderer: &Renderer) -> Result<(), AppError> {
     let mut lines: Vec<String> = Vec::new();
     lines.push(format!("input rosbag file: {}", args.path_to_bag));
     lines.push(format!("output dir: {}", args.output_dir));
+
+    if args.topics.is_empty() {
+        return Err(AppError::ArgsEmptyTopics);
+    }
 
     match (args.start, args.end) {
         // time start or end specified with negative values

@@ -53,7 +53,7 @@ And then take the compiled app: `{project_root}/target/release/bagimages`
 bagimages some.bag . /some_topic/raw_image
 ```
 
-#### Export all frames from specified topic to the specified directory
+#### Export all frames from specified topic to the `./exported` directory
 
 ```bash
 bagimages some.bag exported /some_topic/raw_image
@@ -62,7 +62,7 @@ bagimages some.bag exported /some_topic/raw_image
 #### Export one first frame
 
 ```bash
-bagimages -n 1 some.bag . /some_topic/raw_image
+bagimages -n1 some.bag . /some_topic/raw_image
 # or
 bagimages --number 1 some.bag . /some_topic/raw_image
 ```
@@ -70,7 +70,7 @@ bagimages --number 1 some.bag . /some_topic/raw_image
 #### Export one first frame from different topics
 
 ```bash
-bagimages -n 1 some.bag . /topic1 /topic2 /topic3
+bagimages -n1 some.bag . /topic1 /topic2 /topic3
 # or
 bagimages --number 1 some.bag . /topic1 /topic2 /topic3
 ```
@@ -80,17 +80,17 @@ bagimages --number 1 some.bag . /topic1 /topic2 /topic3
 It means frames number 1, 11, 21, 31, 41 will be exported.
 
 ```bash
-bagimages -n 5 -S 10 some.bag . /some_topic/raw_image
-#               ^
-#               It's a capital S
+bagimages -n5 -S10 some.bag . /some_topic/raw_image
+#              ^
+#              It's a capital S
 # or
 bagimages --number 5 --step 10 some.bag . /some_topic/raw_image
 ```
 
-#### Export every fifth frame from second to tenth second
+#### Export every 5-th frame from 3-rd to 10-th second
 
 ```bash
-bagimages -S 5 -s 2 -e 10 some.bag . /some_topic/raw_image
+bagimages -S5 -s3 -e10 some.bag . /some_topic/raw_image
 # or
 bagimages --step 5 --start 2 --end 10 some.bag . /some_topic/raw_image
 ```
@@ -98,7 +98,7 @@ bagimages --step 5 --start 2 --end 10 some.bag . /some_topic/raw_image
 #### Export of one frame at the tenth second
 
 ```bash
-bagimages -n 1 -s 10 some.bag . /some_topic/raw_image
+bagimages -n1 -s10 some.bag . /some_topic/raw_image
 # or
 bagimages --number 1 --start 10 some.bag . /some_topic/raw_image
 ```

@@ -9,6 +9,7 @@ pub enum View {
     FoundTopic(String),
     ExtractedFromTopic(String, u32),
     // Info(String),
+    NoMessages(String),
     Error(String),
     Done,
 }
@@ -47,8 +48,16 @@ impl Display for View {
                 name.clone().white().bold(),
             ),
             // View::Info(text) => format!("{} {}", "Info".indent().bold().yellow(), text),
+            View::NoMessages(topic) => {
+                writeln!(
+                    f,
+                    "{} found for topic {}",
+                    "No messages".indent().bold().yellow(),
+                    topic.clone().white().bold(),
+                )
+            }
             View::Error(description) => {
-                write!(f, "{} {}", "Error".indent().bold().red(), description)
+                write!(f, "\n{} {}\n", "Error".indent().bold().red(), description)
             }
             View::Done => write!(f, "{}", "Done".indent().bold().green()),
         }

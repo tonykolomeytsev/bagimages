@@ -84,6 +84,7 @@ pub fn extract_internal(args: Args, renderer: &Renderer) -> Result<(), AppError>
     }
 
     renderer.render(&states, false);
+    check_for_empty_topics(&states, &topics, &renderer);
     renderer.line(View::Done);
     Ok(())
 }
@@ -97,7 +98,10 @@ fn process_message(
     renderer: &Renderer,
 ) -> Result<(), AppError> {
     match msg {
-        MessageRecord::Connection(connection) => process_connection(&connection, &topics, states)?,
+        MessageRecord::Connection(connection) => {
+            process_connection(&connection, &topics, states)?;
+            renderer.render(&states, true);
+        }
         MessageRecord::MessageData(data) => {
             // Use first message time as start time
             if *start_time == 0u64 {
@@ -139,10 +143,11 @@ fn process_message(
 
                 // renderer.line(View::Info(format!("time {}\n", elapsed_time_sec)));
                 process_image(&args, state, &data.data)?;
+
+                renderer.render(&states, true);
             }
         }
     }
-    renderer.render(&states, true);
     Ok(())
 }
 
@@ -269,4 +274,21 @@ fn validate_args(args: &Args, renderer: &Renderer) -> Result<(), AppError> {
 
     renderer.line(View::RunningExport(lines));
     Ok(())
+}
+
+fn check_for_empty_topics(
+    states: &BTreeMap<u32, TopicState>,
+    topics: &[&str],
+    renderer: &Renderer,
+) {
+    let found_topics = states
+        .iter()
+        .filter(|(_, topic)| topic.counter > 0)
+        .map(|(_, v)| v.name.as_str())
+        .collect::<Vec<&str>>();
+    for topic in topics {
+        if !found_topics.contains(topic) {
+            renderer.line(View::NoMessages(topic.to_string()));
+        }
+    }
 }

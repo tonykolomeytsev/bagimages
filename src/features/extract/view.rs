@@ -1,6 +1,8 @@
+use std::fmt::Display;
+
 use crossterm::style::Stylize;
 
-use crate::features::renderer::{Indentable, Renderable};
+use crate::features::renderer::Indentable;
 
 pub enum View {
     RunningExport(Vec<String>),
@@ -11,30 +13,34 @@ pub enum View {
     Done,
 }
 
-impl Renderable for View {
-    fn render(&self) -> String {
+impl Display for View {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self {
             View::RunningExport(lines) => {
-                let lines = lines
-                    .iter()
-                    .map(|line| format!("{:i$} - {}", "", line, i = 12))
-                    .collect::<Vec<String>>()
-                    .join("\n");
-                format!(
-                    "{} bagimages v{} with following parameters:\n{}",
+                writeln!(
+                    f,
+                    "{} bagimages v{} with following parameters:",
                     "Running".indent().bold().green(),
                     env!("CARGO_PKG_VERSION"),
-                    lines,
-                )
+                )?;
+                for (i, line) in lines.iter().enumerate() {
+                    if i != 0 {
+                        writeln!(f)?;
+                    }
+                    write!(f, "{:i$} - {}", "", line, i = 12)?;
+                }
+                Ok(())
             }
             View::FoundTopic(name) => {
-                format!(
+                write!(
+                    f,
                     "{} topic {}",
                     "Found".indent().bold().cyan(),
                     name.clone().white().bold(),
                 )
             }
-            View::ExtractedFromTopic(name, number) => format!(
+            View::ExtractedFromTopic(name, number) => write!(
+                f,
                 "{} {} frames from topic {}",
                 "Exported".indent().bold().green(),
                 number,
@@ -42,9 +48,9 @@ impl Renderable for View {
             ),
             // View::Info(text) => format!("{} {}", "Info".indent().bold().yellow(), text),
             View::Error(description) => {
-                format!("{} {}", "Error".indent().bold().red(), description)
+                write!(f, "{} {}", "Error".indent().bold().red(), description)
             }
-            View::Done => format!("{}", "Done".indent().bold().green()),
+            View::Done => write!(f, "{}", "Done".indent().bold().green()),
         }
     }
 }

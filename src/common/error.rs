@@ -13,7 +13,7 @@ pub enum AppError {
 
     #[error("Out of bounds when reading byte stream")]
     OutOfBounds,
-    #[error("Invalid UTF-8 string encountered wher reading byte stream")]
+    #[error("Invalid UTF-8 string encountered when reading byte stream")]
     InvalidUtf8String,
     #[error("Cannot decode frame with encoding {0}")]
     InvalidImageEncoding(String),

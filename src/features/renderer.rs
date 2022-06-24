@@ -1,5 +1,6 @@
 use std::{
     collections::BTreeMap,
+    fmt::Display,
     io::{stdout, Write},
 };
 
@@ -37,12 +38,7 @@ impl Indentable for &str {
     }
 }
 
-/// An interface for types that can be converted into a formatted color output.
-pub trait Renderable {
-    fn render(&self) -> String;
-}
-
-/// `Renderer` uses terminal for beautyful formatted color output.
+/// `Renderer` uses terminal for beautiful formatted color output.
 ///
 /// Also see [Renderable] and its implementations.
 pub struct Renderer();
@@ -50,15 +46,14 @@ pub struct Renderer();
 impl Renderer {
     pub fn line<V>(&self, view: V)
     where
-        V: Renderable,
+        V: Display,
     {
         let mut stdout = stdout();
         stdout.queue(cursor::MoveToPreviousLine(1u16)).unwrap();
         stdout
             .queue(terminal::Clear(ClearType::CurrentLine))
             .unwrap();
-        stdout.write(view.render().as_bytes()).unwrap();
-        stdout.write(b"\n").unwrap();
+        writeln!(stdout, "{}", view).unwrap();
         stdout.flush().unwrap();
     }
 
@@ -83,8 +78,7 @@ impl Renderer {
             stdout
                 .queue(terminal::Clear(ClearType::CurrentLine))
                 .unwrap();
-            stdout.write(view.render().as_bytes()).unwrap();
-            self.new_line();
+            writeln!(stdout, "{}", view).unwrap();
         }
 
         if return_cursor {

@@ -17,7 +17,7 @@ A multi-platform and dependency-free tool for exporting images from rosbag files
 
 > Installation via package managers will be available later.
 
-### Installation on Ubuntu
+### Installation on Ubuntu / MacOS
 
 Just run on terminal:
 
@@ -27,7 +27,7 @@ curl -o- https://raw.githubusercontent.com/tonykolomeytsev/bagimages/master/inst
 
 Or download suitable executable from the [latest release](https://github.com/tonykolomeytsev/bagimages/releases/latest).
 
-### Installation on Windows / MacOS
+### Installation on Windows
 
 Download and run suitable executable from the [latest release](https://github.com/tonykolomeytsev/bagimages/releases/latest).
 

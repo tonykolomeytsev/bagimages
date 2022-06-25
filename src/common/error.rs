@@ -5,11 +5,11 @@ pub enum AppError {
     #[error("Cannot read rosbag file. Cause: {0}")]
     RosBagOpen(String),
     #[error("Invalid chunk in rosbag file. Cause: {0}")]
-    RosBagInvalidChunk(String),
+    RosBagInvalidChunk(rosbag::Error),
     #[error("Invalid message in rosbag file. Cause: {0}")]
-    RosBagInvalidMesage(String),
-    #[error("Invalid topic type in rosbag file: {0}, expected {1}")]
-    RosBagInvalidTopicType(String, String),
+    RosBagInvalidMessage(rosbag::Error),
+    #[error("Topic {0} has incompatible type `{1}`, only `{2}` is supported")]
+    RosBagInvalidTopicType(String, String, String),
 
     #[error("Out of bounds when reading byte stream")]
     OutOfBounds,
@@ -30,4 +30,6 @@ pub enum AppError {
     ArgsNegativeNumber(u32),
     #[error("You have not specified any topic to export. Try running `bagimages --help`")]
     ArgsEmptyTopics,
+    #[error("String `{0}` is not a valid regular expression")]
+    ArgsInvalidRegex(String),
 }

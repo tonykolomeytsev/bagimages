@@ -10,8 +10,9 @@ use crossterm::{
     QueueableCommand,
 };
 
-use crate::features::extract::extract::TopicState;
 use crate::features::extract::view::View;
+
+use super::extract::extract::TopicState;
 
 /// Because rustc output indent is 12
 const INDENT_SIZE: usize = 12usize;

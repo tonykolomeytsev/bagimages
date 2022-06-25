@@ -9,7 +9,7 @@ pub enum View {
     FoundTopic(String),
     ExtractedFromTopic(String, u32),
     // Info(String),
-    NoMessages(String),
+    NoMessages(String, bool),
     Error(String),
     Done,
 }
@@ -48,13 +48,32 @@ impl Display for View {
                 name.clone().white().bold(),
             ),
             // View::Info(text) => format!("{} {}", "Info".indent().bold().yellow(), text),
-            View::NoMessages(topic) => {
-                writeln!(
-                    f,
-                    "{} found for topic {}",
-                    "No messages".indent().bold().yellow(),
-                    topic.clone().white().bold(),
-                )
+            View::NoMessages(topic, regex) => {
+                if *regex {
+                    writeln!(
+                        f,
+                        "{} found for topics with names matching regex `{}`",
+                        "No messages".indent().bold().yellow(),
+                        topic.clone().white().bold(),
+                    )
+                } else {
+                    writeln!(
+                        f,
+                        "{} found for topic {}",
+                        "No messages".indent().bold().yellow(),
+                        topic.clone().white().bold(),
+                    )?;
+                    // maybe user forgot to specify regex option
+                    if !regex && topic.chars().any(|ch| ch == '*' || ch == '\\') {
+                        writeln!(
+                            f,
+                            "{:i$} maybe you forgot to specify the `-r` (`--regex`) option?",
+                            "",
+                            i = 12,
+                        )?;
+                    }
+                    Ok(())
+                }
             }
             View::Error(description) => {
                 write!(f, "\n{} {}\n", "Error".indent().bold().red(), description)

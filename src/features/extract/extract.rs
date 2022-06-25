@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 use image::{ImageBuffer, RgbImage};
+use regex::Regex;
 use rosbag::record_types::Connection;
 use rosbag::{ChunkRecord, MessageRecord, RosBag};
 
@@ -8,35 +9,58 @@ use crate::common::cursor::Cursor;
 use crate::common::error::AppError;
 use crate::common::naming::to_res_name;
 use crate::features::extract::view::View;
-use crate::sensor_msgs::{self};
+use crate::sensor_msgs;
 use crate::{args::Args, features::renderer::Renderer};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct TopicState {
     /// Number of all encountered frames
     pub counter: u32,
-
     /// Number of all extracted frames
     pub extracted: u32,
-
     /// Topic name
     pub name: String,
-
     /// Topic files base name
     pub res_name: String,
-
     /// Is export process done?
     pub done: bool,
 }
 
 impl TopicState {
-    fn new(name: String) -> Self {
+    pub fn new(name: String) -> Self {
         TopicState {
             counter: 0,
             extracted: 0,
             res_name: to_res_name(&name),
             name,
             done: false,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct TopicName<'a> {
+    pub plain: &'a str,
+    pattern: Option<Regex>,
+}
+
+impl<'a> TopicName<'a> {
+    pub fn new(name: &'a str, regex: bool) -> Result<Self, AppError> {
+        Ok(Self {
+            plain: name,
+            pattern: if regex {
+                Some(Regex::new(name).map_err(|_| AppError::ArgsInvalidRegex(name.to_string()))?)
+            } else {
+                None
+            },
+        })
+    }
+
+    pub fn matches(&self, another: &str) -> bool {
+        if let Some(pattern) = &self.pattern {
+            pattern.is_match(another)
+        } else {
+            self.plain == another
         }
     }
 }
@@ -50,33 +74,41 @@ pub fn extract(args: Args) {
     }
 }
 
-pub fn extract_internal(args: Args, renderer: &Renderer) -> Result<(), AppError> {
+fn extract_internal(args: Args, renderer: &Renderer) -> Result<(), AppError> {
     validate_args(&args, &renderer)?;
 
     let bag = RosBag::new(&args.path_to_bag).map_err(|e| AppError::RosBagOpen(e.to_string()))?;
 
-    let topics = args
+    let requested_topics = args
         .topics
         .iter()
-        .map(String::as_str)
-        .collect::<Vec<&str>>();
+        .map(|name| TopicName::new(name, args.regex))
+        .collect::<Result<Vec<TopicName>, AppError>>()?;
 
     let mut states: BTreeMap<u32, TopicState> = BTreeMap::new();
     let mut start_time: u64 = 0;
 
     for record in bag.chunk_records() {
-        // Export process termination criteria
+        // Termination criteria for the export process
         let is_all_finished = states.iter().all(|(_, v)| v.done);
-        let is_all_found = states.len() == topics.len();
-        if is_all_finished && is_all_found {
+        let all_requested_topics_are_found = states.len() == requested_topics.len() && !args.regex;
+        if is_all_finished && all_requested_topics_are_found {
             break;
         }
 
-        match record.map_err(|e| AppError::RosBagInvalidChunk(e.to_string()))? {
+        let record = record.map_err(AppError::RosBagInvalidChunk)?;
+        match record {
             ChunkRecord::Chunk(chunk) => {
                 for msg in chunk.messages() {
-                    let msg = msg.map_err(|e| AppError::RosBagInvalidMesage(e.to_string()))?;
-                    process_message(&args, msg, &mut states, &topics, &mut start_time, &renderer)?;
+                    let msg = msg.map_err(AppError::RosBagInvalidMessage)?;
+                    process_message(
+                        msg,
+                        &args,
+                        &mut states,
+                        &requested_topics,
+                        &mut start_time,
+                        &renderer,
+                    )?;
                 }
             }
             _ => (),
@@ -84,22 +116,24 @@ pub fn extract_internal(args: Args, renderer: &Renderer) -> Result<(), AppError>
     }
 
     renderer.render(&states, false);
-    check_for_empty_topics(&states, &topics, &renderer);
+    check_for_empty_topics(&states, &requested_topics, args.regex, &renderer);
     renderer.line(View::Done);
     Ok(())
 }
 
 fn process_message(
-    args: &Args,
     msg: MessageRecord,
+    args: &Args,
     states: &mut BTreeMap<u32, TopicState>,
-    topics: &[&str],
+    requested_topics: &[TopicName],
     start_time: &mut u64,
     renderer: &Renderer,
 ) -> Result<(), AppError> {
     match msg {
         MessageRecord::Connection(connection) => {
-            process_connection(&connection, &topics, states)?;
+            let is_requested_topic =
+                |another: &str| requested_topics.iter().any(|topic| topic.matches(another));
+            process_connection(connection, states, is_requested_topic)?;
             renderer.render(&states, true);
         }
         MessageRecord::MessageData(data) => {
@@ -151,23 +185,26 @@ fn process_message(
     Ok(())
 }
 
-fn process_connection(
-    connection: &Connection,
-    topics: &[&str],
+fn process_connection<F>(
+    connection: Connection,
     states: &mut BTreeMap<u32, TopicState>,
-) -> Result<(), AppError> {
+    is_requested_topic: F,
+) -> Result<(), AppError>
+where
+    F: FnOnce(&str) -> bool,
+{
     let conn_id = connection.id;
     let key = connection.topic;
-    let is_desired_topic = topics.contains(&key);
     let is_desired_type = connection.tp == sensor_msgs::Image::ros_type();
 
-    match (is_desired_topic, is_desired_type) {
+    match (is_requested_topic(key), is_desired_type) {
         (true, true) => {
             states.insert(conn_id, TopicState::new(key.to_string()));
             Ok(())
         }
         (true, false) => Err(AppError::RosBagInvalidTopicType(
             key.to_string(),
+            connection.tp.to_string(),
             sensor_msgs::Image::ros_type().to_string(),
         )),
         _ => Ok(()),
@@ -272,13 +309,18 @@ fn validate_args(args: &Args, renderer: &Renderer) -> Result<(), AppError> {
         lines.push("invert color channels (RGB8 to BGR8 and vice-versa)".to_string());
     }
 
+    if args.regex {
+        lines.push("search topics with regex".to_string())
+    }
+
     renderer.line(View::RunningExport(lines));
     Ok(())
 }
 
 fn check_for_empty_topics(
     states: &BTreeMap<u32, TopicState>,
-    topics: &[&str],
+    requested_topics: &[TopicName],
+    regex: bool,
     renderer: &Renderer,
 ) {
     let found_topics = states
@@ -286,9 +328,14 @@ fn check_for_empty_topics(
         .filter(|(_, topic)| topic.counter > 0)
         .map(|(_, v)| v.name.as_str())
         .collect::<Vec<&str>>();
-    for topic in topics {
-        if !found_topics.contains(topic) {
-            renderer.line(View::NoMessages(topic.to_string()));
+
+    for requested_topic in requested_topics {
+        let contains_topic = found_topics
+            .iter()
+            .any(|found_topic| requested_topic.matches(found_topic));
+
+        if !contains_topic {
+            renderer.line(View::NoMessages(requested_topic.plain.to_string(), regex));
         }
     }
 }

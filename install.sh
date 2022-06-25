@@ -1,8 +1,18 @@
 #!/bin/bash
 
+PKG_NAME="$OSTYPE"
+if [[ "$PKG_NAME" == "linux-gnu"* ]]; then
+  PKG_NAME="bagimages-x86_64-unknown-linux-musl.tar.gz"
+elif [[ "$PKG_NAME" == "darwin"* ]]; then
+  PKG_NAME="bagimages-x86_64-apple-darwin.tar.gz"
+else
+  echo "The installer is not designed for this OS version, follow the installation instructions from https://github.com/tonykolomeytsev/bagimages"
+  exit 1
+fi
+
 cleanup() {
   printf "Cleaning up... "
-  rm -rf bagimages-x86_64-unknown-linux-musl.tar.gz
+  rm -rf "$PKG_NAME"
   rm -rf dist
   echo "Done"
 }
@@ -10,8 +20,8 @@ cleanup() {
 trap 'cleanup' EXIT
 
 echo "Downloading... "
-sudo curl -LJO https://github.com/tonykolomeytsev/bagimages/releases/latest/download/bagimages-x86_64-unknown-linux-musl.tar.gz
+sudo curl -LJO "https://github.com/tonykolomeytsev/bagimages/releases/latest/download/$PKG_NAME"
 echo "Unpacking... "
-tar -xzf bagimages-x86_64-unknown-linux-musl.tar.gz
+tar -xzf "$PKG_NAME"
 sudo mv ./dist/bagimages /usr/local/bin/bagimages
 echo "Installed"

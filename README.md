@@ -9,7 +9,7 @@ A multi-platform tool for exporting images from rosbag files.
 
 ## Features
 
-- Export from several topics at the same time.
+- Export from several topics at the same time (select topics with regex)
 - Specify from what second (in bag's time) to start the export.
 - Specify number of images to export.
 
@@ -75,6 +75,16 @@ bagimages --number 1 some.bag . /some_topic/raw_image
 bagimages -n1 some.bag . /topic1 /topic2 /topic3
 # or
 bagimages --number 1 some.bag . /topic1 /topic2 /topic3
+```
+
+#### Export one first frame from different topics (with regular expression)
+
+**NOTE:** It is better to write regular expressions in quotes.
+
+```bash
+bagimages -r -n1 some.bag . '/topic\d'
+# or
+bagimages --regex --number 1 some.bag . '/topic[0-9]'
 ```
 
 #### Export 5 frames with 10 frames step

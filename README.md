@@ -9,9 +9,9 @@ A multi-platform tool for exporting images from rosbag files.
 
 ## Features
 
-- Export from several topics at the same time (select topics with regex)
-- Specify from what second (in bag's time) to start the export.
-- Specify number of images to export.
+- Export from topics by name and by regular expressions.
+- Export at the specified time intervals from the beginning of the bag file.
+- Export the specified number of frames with a certain step.
 
 ## How to install?
 

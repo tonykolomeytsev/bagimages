@@ -42,9 +42,10 @@ impl Display for View {
             }
             View::ExtractedFromTopic(name, number) => write!(
                 f,
-                "{} {} frames from topic {}",
+                "{} {} frame{} from topic {}",
                 "Exported".indent().bold().green(),
                 number,
+                if *number == 1 { "" } else { "s" },
                 name.clone().white().bold(),
             ),
             // View::Info(text) => format!("{} {}", "Info".indent().bold().yellow(), text),

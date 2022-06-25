@@ -3,7 +3,7 @@
 ![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/tonykolomeytsev/bagimages?label=version) 
 ![GitHub license](https://img.shields.io/github/license/tonykolomeytsev/bagimages)
 
-A multi-platform tool for exporting images from rosbag files.
+A multi-platform and dependency-free tool for exporting images from rosbag files.
 
 <img src="images/gh-logo.png"/><br/>
 

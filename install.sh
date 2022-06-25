@@ -23,5 +23,8 @@ echo "Downloading... "
 sudo curl -LJO "https://github.com/tonykolomeytsev/bagimages/releases/latest/download/$PKG_NAME"
 echo "Unpacking... "
 tar -xzf "$PKG_NAME"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  sudo xattr -d com.apple.quarantine ./dist/bagimages
+fi
 sudo mv ./dist/bagimages /usr/local/bin/bagimages
 echo "Installed"

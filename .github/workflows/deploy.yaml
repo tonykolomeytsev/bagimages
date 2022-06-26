@@ -99,7 +99,8 @@ jobs:
         if: matrix.build == 'windows'
         shell: bash
         run: |
-          mv ./${{ env.RELEASE_BIN }}-${{ steps.get_version.outputs.VERSION }}-x86_64.msi ./dist/${{ env.RELEASE_BIN }}.msi
+          ls -lah
+          mv ./*.msi ./dist/${{ env.RELEASE_BIN }}.msi
           mv ${{ env.RELEASE_ADDS }} ./dist
           7z a -tzip ./${{ env.RELEASE_DIR }}/${{ env.RELEASE_BIN }}-${{ steps.get_version.outputs.VERSION }}-${{ env.WINDOWS_TARGET }}.zip ./dist
 

@@ -49,7 +49,7 @@ And then take the compiled app: `{project_root}/target/release/bagimages`
 
 ## How to use?
 
-**NOTE:** Sometimes when exporting images via cv_bridge, there is confusion with color channels: rgb8 images turn into bgr8. To compensate for this effect, use the `-i` option. 
+**NOTE:** Sometimes when exporting images via cv_bridge, there is confusion with color channels: `RGB8` images turn into `BGR8`. To compensate for this effect, use the `-i` option. 
 
 ### Export all frames from specified topic to the current directory
 
@@ -65,63 +65,55 @@ bagimages some.bag kek /some_topic/raw_image
 
 ### Export one first frame
 
-```bash
-bagimages -n1 some.bag . /some_topic/raw_image`
-```
-
-### Export first frames from all available topics
+To export a certain number of frames, specify the `--number` option or its shortened version `-n`.
 
 ```bash
-bagimages -n1 some.bag . '.*'
+bagimages -n1 some.bag . /topic1
 ```
 
 ### Export one first frame from different topics
 
 ```bash
 bagimages -n1 some.bag . /topic1 /topic2 /topic3
-# or
-bagimages --number 1 some.bag . /topic1 /topic2 /topic3
 ```
 
-### Export one first frame from different topics (with regular expression)
+### Export first frames from all available topics
+
+You can specify not only topic names, but also a regular expression that the names must match. To do this, add the `--regex` (`-r`) flag.
 
 **NOTE:** It is better to write regular expressions in quotes.
 
 ```bash
-bagimages -r -n1 some.bag . '/topic\d'
-# or
-bagimages --regex --number 1 some.bag . '/topic[0-9]'
+bagimages -r -n1 some.bag . '.*'
 ```
 
 ### Export 5 frames with 10 frames step
 
-It means frames number 1, 11, 21, 31, 41 will be exported.
+It means frames number 1, 11, 21, 31, 41 will be exported. The step is specified with the `--step` (`-S`) option.
 
 ```bash
 bagimages -n5 -S10 some.bag . /some_topic/raw_image
-#              ^
-#              It's a capital S
-# or
-bagimages --number 5 --step 10 some.bag . /some_topic/raw_image
 ```
 
 ### Export every 5-th frame from 3-rd to 10-th second
 
+You can specify the time from which to start the export and the time at which the export should end.
+The start time is specified with the `--start` (`-s`) option.
+The end time is set with the `--end` (`-e`) option.
+
 ```bash
 bagimages -S5 -s3 -e10 some.bag . /some_topic/raw_image
-# or
-bagimages --step 5 --start 2 --end 10 some.bag . /some_topic/raw_image
 ```
 
 ### Export of one frame at the tenth second
 
 ```bash
 bagimages -n1 -s10 some.bag . /some_topic/raw_image
-# or
-bagimages --number 1 --start 10 some.bag . /some_topic/raw_image
 ```
 
 ### Export with conversion from BGR8 to RGB8 (or vice versa)
+
+**NOTE:** Sometimes when exporting images via cv_bridge, there is confusion with color channels: `RGB8` images turn into `BGR8`. To compensate for this effect, use the `-i` option. 
 
 ```bash
 bagimages -i [OTHER_OPTIONS] some.bag . /some_topic

@@ -40,8 +40,6 @@ impl Indentable for &str {
 }
 
 /// `Renderer` uses terminal for beautiful formatted color output.
-///
-/// Also see [Renderable] and its implementations.
 pub struct Renderer();
 
 impl Renderer {

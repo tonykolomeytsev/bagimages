@@ -51,27 +51,31 @@ And then take the compiled app: `{project_root}/target/release/bagimages`
 
 **NOTE:** Sometimes when exporting images via cv_bridge, there is confusion with color channels: rgb8 images turn into bgr8. To compensate for this effect, use the `-i` option. 
 
-#### Export all frames from specified topic to the current directory
+### Export all frames from specified topic to the current directory
 
 ```bash
 bagimages some.bag . /some_topic/raw_image
 ```
 
-#### Export all frames from specified topic to the `./exported` directory
+### Export all frames from specified topic to the `kek` directory (directory must already exist):
 
 ```bash
-bagimages some.bag exported /some_topic/raw_image
+bagimages some.bag kek /some_topic/raw_image
 ```
 
-#### Export one first frame
+### Export one first frame
 
 ```bash
-bagimages -n1 some.bag . /some_topic/raw_image
-# or
-bagimages --number 1 some.bag . /some_topic/raw_image
+bagimages -n1 some.bag . /some_topic/raw_image`
 ```
 
-#### Export one first frame from different topics
+### Export first frames from all available topics
+
+```bash
+bagimages -n1 some.bag . '.*'
+```
+
+### Export one first frame from different topics
 
 ```bash
 bagimages -n1 some.bag . /topic1 /topic2 /topic3
@@ -79,7 +83,7 @@ bagimages -n1 some.bag . /topic1 /topic2 /topic3
 bagimages --number 1 some.bag . /topic1 /topic2 /topic3
 ```
 
-#### Export one first frame from different topics (with regular expression)
+### Export one first frame from different topics (with regular expression)
 
 **NOTE:** It is better to write regular expressions in quotes.
 
@@ -89,7 +93,7 @@ bagimages -r -n1 some.bag . '/topic\d'
 bagimages --regex --number 1 some.bag . '/topic[0-9]'
 ```
 
-#### Export 5 frames with 10 frames step
+### Export 5 frames with 10 frames step
 
 It means frames number 1, 11, 21, 31, 41 will be exported.
 
@@ -101,7 +105,7 @@ bagimages -n5 -S10 some.bag . /some_topic/raw_image
 bagimages --number 5 --step 10 some.bag . /some_topic/raw_image
 ```
 
-#### Export every 5-th frame from 3-rd to 10-th second
+### Export every 5-th frame from 3-rd to 10-th second
 
 ```bash
 bagimages -S5 -s3 -e10 some.bag . /some_topic/raw_image
@@ -109,7 +113,7 @@ bagimages -S5 -s3 -e10 some.bag . /some_topic/raw_image
 bagimages --step 5 --start 2 --end 10 some.bag . /some_topic/raw_image
 ```
 
-#### Export of one frame at the tenth second
+### Export of one frame at the tenth second
 
 ```bash
 bagimages -n1 -s10 some.bag . /some_topic/raw_image
@@ -117,7 +121,7 @@ bagimages -n1 -s10 some.bag . /some_topic/raw_image
 bagimages --number 1 --start 10 some.bag . /some_topic/raw_image
 ```
 
-#### Export with conversion from BGR8 to RGB8 (or vice versa)
+### Export with conversion from BGR8 to RGB8 (or vice versa)
 
 ```bash
 bagimages -i [OTHER_OPTIONS] some.bag . /some_topic

@@ -9,6 +9,7 @@ pub enum View {
     FoundTopic(String),
     ExtractedFromTopic(String, u32),
     // Info(String),
+    IncompatibleTopicType(String, String, String),
     NoMessages(String, bool),
     Error(String),
     Done,
@@ -49,6 +50,13 @@ impl Display for View {
                 name.clone().white().bold(),
             ),
             // View::Info(text) => format!("{} {}", "Info".indent().bold().yellow(), text),
+            View::IncompatibleTopicType(topic, actual_type, expected_type) => {
+                writeln!(
+                    f,
+                    "Topic {} has incompatible type `{}`, only `{}` is supported",
+                    topic, actual_type, expected_type,
+                )
+            }
             View::NoMessages(topic, regex) => {
                 if *regex {
                     writeln!(

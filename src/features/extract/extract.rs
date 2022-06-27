@@ -15,19 +15,19 @@ use crate::{args::Args, features::renderer::Renderer};
 #[derive(Debug)]
 pub struct TopicState {
     /// Number of all encountered frames
-    pub counter: u32,
+    counter: u32,
     /// Number of all extracted frames
     pub extracted: u32,
     /// Topic name
     pub name: String,
     /// Topic files base name
-    pub res_name: String,
+    res_name: String,
     /// Is export process done?
-    pub done: bool,
+    done: bool,
 }
 
 impl TopicState {
-    pub fn new(name: String) -> Self {
+    fn new(name: String) -> Self {
         TopicState {
             counter: 0,
             extracted: 0,
@@ -39,13 +39,13 @@ impl TopicState {
 }
 
 #[derive(Debug)]
-pub struct TopicName<'a> {
-    pub plain: &'a str,
+struct TopicName<'a> {
+    plain: &'a str,
     pattern: Option<Regex>,
 }
 
 impl<'a> TopicName<'a> {
-    pub fn new(name: &'a str, regex: bool) -> Result<Self, AppError> {
+    fn new(name: &'a str, regex: bool) -> Result<Self, AppError> {
         Ok(Self {
             plain: name,
             pattern: if regex {
@@ -56,7 +56,7 @@ impl<'a> TopicName<'a> {
         })
     }
 
-    pub fn matches(&self, another: &str) -> bool {
+    fn matches(&self, another: &str) -> bool {
         if let Some(pattern) = &self.pattern {
             pattern.is_match(another)
         } else {
@@ -133,7 +133,7 @@ fn process_message(
         MessageRecord::Connection(connection) => {
             let is_requested_topic =
                 |another: &str| requested_topics.iter().any(|topic| topic.matches(another));
-            process_connection(connection, states, is_requested_topic)?;
+            process_connection(connection, states, &renderer, is_requested_topic);
             renderer.render(&states, true);
         }
         MessageRecord::MessageData(data) => {
@@ -188,9 +188,9 @@ fn process_message(
 fn process_connection<F>(
     connection: Connection,
     states: &mut BTreeMap<u32, TopicState>,
+    renderer: &Renderer,
     is_requested_topic: F,
-) -> Result<(), AppError>
-where
+) where
     F: FnOnce(&str) -> bool,
 {
     let conn_id = connection.id;
@@ -200,14 +200,13 @@ where
     match (is_requested_topic(key), is_desired_type) {
         (true, true) => {
             states.insert(conn_id, TopicState::new(key.to_string()));
-            Ok(())
         }
-        (true, false) => Err(AppError::RosBagInvalidTopicType(
+        (true, false) => renderer.line(View::IncompatibleTopicType(
             key.to_string(),
             connection.tp.to_string(),
             sensor_msgs::Image::ros_type().to_string(),
         )),
-        _ => Ok(()),
+        _ => (),
     }
 }
 

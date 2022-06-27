@@ -8,8 +8,6 @@ pub enum AppError {
     RosBagInvalidChunk(rosbag::Error),
     #[error("Invalid message in rosbag file. Cause: {0}")]
     RosBagInvalidMessage(rosbag::Error),
-    #[error("Topic {0} has incompatible type `{1}`, only `{2}` is supported")]
-    RosBagInvalidTopicType(String, String, String),
 
     #[error("Out of bounds when reading byte stream")]
     OutOfBounds,

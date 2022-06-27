@@ -6,6 +6,7 @@ license = "MIT"
 authors = [ "Anton Kolomeytsev <tonykolomeytsev@gmail.com>" ]
 description = "A multi-platform and dependency-free tool for exporting images from rosbag files"
 homepage = "https://github.com/tonykolomeytsev/bagimages"
+license-file = "LICENSE"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

@@ -25,11 +25,13 @@ Just run on terminal:
 curl -o- https://raw.githubusercontent.com/tonykolomeytsev/bagimages/master/install.sh | bash
 ```
 
-Or download suitable executable from the [latest release](https://github.com/tonykolomeytsev/bagimages/releases/latest).
+Or download suitable executable from the [latest release](https://github.com/tonykolomeytsev/bagimages/releases/latest) and install it manually.
 
 ### Installation on Windows
 
-Download and run suitable executable from the [latest release](https://github.com/tonykolomeytsev/bagimages/releases/latest).
+Download the zip archive for windows from the [latest release](https://github.com/tonykolomeytsev/bagimages/releases/latest), unzip it and run the installer `bagimages.msi`. Allow the installer to add the program to PATH so that it is available to run in the terminal. 
+
+Done!
 
 ### Build source code
 
